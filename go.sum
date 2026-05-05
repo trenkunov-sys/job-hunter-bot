@@ -1,0 +1,10 @@
+github.com/go-sql-driver/mysql v1.6.0 h1:2e+8p0qPfAVx4FZqymvW8GzG5jZHPv1K6n6J8rUcV0=
+github.com/go-sql-driver/mysql v1.6.0/go.mod h1:lQfYPoqR7GBw5+1o5j5jZ8kMMnMvTj5x+7e3bZq8K+U=
+github.com/jmoiron/sqlx v1.3.5 h1:wFFqCE+UY6M/j4P6zTYR3iG+9gXZgiVc1cC9DnrM3f0=
+github.com/jmoiron/sqlx v1.3.5/go.mod h1:2BljVx/86SuTyjE+aPYlHCTNvZrnJXghYGpNiXLBMCQ=
+github.com/joho/godotenv v1.5.1 h1:2eQy2H0vGvE6xU6b7e3e1N8hNFzC0uQeSPm45Rl4Rk=
+github.com/joho/godotenv v1.5.1/go.mod h1:9hKk1NkQMq5vY5k2vLjwUfW7bqPzqP3b+kLpPmFZbQ=
+github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4Jewq0dtF6D1cE=
+github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
+github.com/mattn/go-sqlite3 v1.14.18 h1:8ZT/4W2s4i8Tfj7xLhfsGoHhBbG/2CJq3Xm2vLcGfY=
+github.com/mattn/go-sqlite3 v1.14.18/go.mod h1:2eH2YkHZ9w2/sn3+2xD2jFNG9o3Vvpx2vBfCk0B5xI=
