@@ -1,11 +1,14 @@
 package main
 
 import (
+   "context"
+   "fmt"
    "log"
    "net/http"
    "os"
    "os/signal"
    "syscall"
+   "time"
 
    tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -19,7 +22,12 @@ func main() {
 
    dbPath := cfg.DatabasePath
    if dbPath == "" {
-   	dbPath = "kopeyka.db"
+   	dbPath = "/data/kopeyka.db"
+   }
+
+   // Создаём директорию для БД если нужно
+   if dir := os.Getenv("DATABASE_DIR"); dir != "" {
+   	os.MkdirAll(dir, 0755)
    }
 
    db, err := NewDB(dbPath)
@@ -42,37 +50,85 @@ func main() {
 
    bot := NewBot(botAPI, db, cfg)
 
-   // Graceful shutdown
+   // HTTP mux с health check
+   mux := http.NewServeMux()
+   mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+   	w.WriteHeader(http.StatusOK)
+   	w.Write([]byte("ok"))
+   })
+
+   srv := &http.Server{
+   	Addr:    ":" + cfg.WebhookPort,
+   	Handler: mux,
+   }
+
    sigChan := make(chan os.Signal, 1)
    signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-   // Webhook or Long Polling
-   if cfg.WebhookURL != "" {
-   	wh, _ := tgbotapi.NewWebhook(cfg.WebhookURL + "/" + cfg.BotToken)
-   	botAPI.Request(wh)
+   updates := make(chan tgbotapi.Update, 100)
 
-   	updates := botAPI.ListenForWebhook("/" + cfg.BotToken)
-   	go http.ListenAndServe(":"+cfg.WebhookPort, nil)
-   	log.Printf("Webhook started on port %s", cfg.WebhookPort)
+   if cfg.WebhookURL != "" {
+   	wh, err := tgbotapi.NewWebhook(cfg.WebhookURL + "/" + cfg.BotToken)
+   	if err != nil {
+   		log.Fatal("Webhook init error:", err)
+   	}
+   	_, err = botAPI.Request(wh)
+   	if err != nil {
+   		log.Fatal("Webhook set error:", err)
+   	}
+
+   	info, err := botAPI.GetWebhookInfo()
+   	if err == nil {
+   		log.Printf("Webhook info: %s", info.URL)
+   	}
+
+   	// Telegram webhook handler
+   	mux.HandleFunc("/"+cfg.BotToken, func(w http.ResponseWriter, r *http.Request) {
+   		var update tgbotapi.Update
+   		if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+   			w.WriteHeader(http.StatusBadRequest)
+   			return
+   		}
+   		updates <- update
+   		w.WriteHeader(http.StatusOK)
+   		w.Write([]byte("ok"))
+   	})
 
    	go func() {
-   		for update := range updates {
-   			bot.HandleUpdate(update)
+   		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+   			log.Fatalf("HTTP server error: %v", err)
    		}
    	}()
+   	log.Printf("Webhook started on port %s", cfg.WebhookPort)
    } else {
    	u := tgbotapi.NewUpdate(0)
    	u.Timeout = 60
-   	updates := botAPI.GetUpdatesChan(u)
+   	rawUpdates := botAPI.GetUpdatesChan(u)
 
    	go func() {
-   		for update := range updates {
-   			bot.HandleUpdate(update)
+   		for update := range rawUpdates {
+   			updates <- update
    		}
    	}()
    	log.Println("Long polling started")
    }
 
+   // Обработчик updates
+   go func() {
+   	for update := range updates {
+   		bot.HandleUpdate(update)
+   	}
+   }()
+
    <-sigChan
    log.Println("Shutting down gracefully...")
+
+   ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+   defer cancel()
+
+   if err := srv.Shutdown(ctx); err != nil {
+   	log.Printf("HTTP shutdown error: %v", err)
+   }
+   db.Close()
+   log.Println("Shutdown complete")
 }
