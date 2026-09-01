@@ -42,10 +42,13 @@ func LoadConfig() *Config {
    	rateWindow = 60
    }
 
+   // Для контейнера: если не задан путь, используем /data (там будет persistent volume)
+   dbPath := getEnv("DATABASE_PATH", "/data/kopeyka.db")
+
    return &Config{
    	BotToken:          os.Getenv("TELEGRAM_BOT_TOKEN"),
    	DeepSeekAPIKey:    os.Getenv("DEEPSEEK_API_KEY"),
-   	DatabasePath:      getEnv("DATABASE_PATH", "kopeyka.db"),
+   	DatabasePath:      dbPath,
    	AdminChatID:       adminID,
    	AdminUsername:     getEnv("ADMIN_USERNAME", "Trene4ca"),
    	YooKassaShopID:    os.Getenv("YOOKASSA_SHOP_ID"),
