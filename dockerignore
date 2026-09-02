@@ -1,0 +1,6 @@
+.git
+.env
+.env.example
+*.md
+ARTIFACTS.md
+kopeyka.db
