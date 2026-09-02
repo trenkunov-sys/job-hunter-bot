@@ -1,0 +1,28 @@
+app = 'kopeyka-bot'
+primary_region = 'waw'  # поменяй на ближайший к тебе: ams, fra, waw, sin и т.д.
+
+[build]
+
+[env]
+  WEBHOOK_PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'off'  # важно: бот должен быть always-on
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[mounts]]
+  source = 'kopeyka_data'
+  destination = '/data'
+
+[checks]
+  [checks.alive]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    port = 8080
+    timeout = "5s"
+    type = "http"
