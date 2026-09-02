@@ -1,0 +1,7 @@
+cd /path/to/job-hunter-bot
+
+git init
+git add .
+git commit -m "Render deploy: PostgreSQL + webhook"
+git remote add origin https://github.com/trenkunov-sys/job-hunter-bot.git
+git push -u origin main --force
